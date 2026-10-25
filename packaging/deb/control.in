@@ -1,0 +1,16 @@
+Package: retrobox-mangohud
+Version: @VERSION@
+Section: utils
+Priority: optional
+Architecture: @ARCH@
+Maintainer: Manu Romero <manu-romero-411@users.noreply.github.com>
+Depends: @DEPENDS@
+Recommends: libdbus-1-3, libx11-6, libvulkan1
+Homepage: https://github.com/manu-romero-411/retrobox-mangohud
+Description: MangoHud with background image support, for Retrobox
+ MangoHud built with the Retrobox patches (background_image/image) in a
+ private prefix, /opt/retrobox/resources/mangohud, with its own Vulkan layer
+ (VK_LAYER_RETROBOX_MANGOHUD_*) switched on by RETROBOX_MANGOHUD=1.
+ .
+ It does not replace, nor conflict with, the MangoHud package of the
+ distribution: both can be installed at the same time.

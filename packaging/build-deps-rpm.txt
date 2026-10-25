@@ -1,0 +1,24 @@
+# Build dependencies for Fedora (one package per line).
+git
+meson
+ninja-build
+gcc
+gcc-c++
+binutils
+rpm-build
+pkgconf-pkg-config
+python3
+python3-mako
+glslang
+dbus-devel
+json-devel
+wayland-devel
+wayland-protocols-devel
+libxkbcommon-devel
+libX11-devel
+libdrm-devel
+mesa-libGL-devel
+vulkan-loader-devel
+vulkan-headers
+libcurl-devel
+yaml-cpp-devel

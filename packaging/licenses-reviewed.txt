@@ -1,0 +1,36 @@
+# Third-party code and data of upstream whose licence has been REVIEWED and is
+# described in packaging/copyright. scripts/check-licenses.sh fails the build
+# when upstream adds something that is not listed here, so that new bundled
+# code or fonts never ship without somebody reading their licence first.
+#
+# Paths are relative to the upstream source tree. An entry ending in "/"
+# covers everything below it. For subprojects/ the version suffix is ignored
+# (imgui-1.91.6 is listed as subprojects/imgui).
+
+# subprojects (downloaded by meson, linked statically)
+subprojects/imgui
+subprojects/implot
+subprojects/spdlog
+subprojects/Vulkan-Headers
+subprojects/Vulkan-Utility-Libraries
+# only used by tests, never linked into the package
+subprojects/cmocka
+
+# git submodule, Windows only: not built here
+modules/minhook
+
+# vendored in include/
+include/IconsForkAwesome.h
+include/glad/
+include/KHR/
+include/vulkan/
+include/elfhacks.h
+include/filesystem.h
+include/nvml.h
+
+# vendored or derived in src/
+src/vulkan.cpp
+src/mesa/
+src/forkawesome.h
+src/font_default.h
+src/font_unispace.c

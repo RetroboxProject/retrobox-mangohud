@@ -1,0 +1,24 @@
+# Build dependencies for Debian/Ubuntu (one package per line).
+ca-certificates
+git
+meson
+ninja-build
+build-essential
+binutils
+dpkg-dev
+pkg-config
+python3
+python3-mako
+glslang-tools
+libdbus-1-dev
+nlohmann-json3-dev
+libwayland-dev
+libwayland-egl-backend-dev
+wayland-protocols
+libxkbcommon-dev
+libx11-dev
+libdrm-dev
+libgl1-mesa-dev
+libvulkan-dev
+libcurl4-openssl-dev
+libyaml-cpp-dev

@@ -55,20 +55,20 @@ different flags, with the same name and version.
 
 ### Versions
 
-Each package is built from the **latest stable upstream release tag** and
-carries the UTC date and time of the commit that tag points to:
+Each package is built from the **latest stable upstream release tag** and its
+version is the tag's:
 
 | Format | Example |
 |--------|---------|
-| `.deb` | `0.8.4+20260527.140811-12~ubuntu24.04` |
-| `.rpm` | `0.8.4^20260527.140811-12.fc44` |
+| `.deb` | `0.8.4-12~ubuntu24.04` |
+| `.rpm` | `0.8.4-12.fc44` |
 
-The release is tagged `build-v0.8.4-20260527_140811-<hash>` (`YYYYMMDD_HHMMSS`;
-Debian versions cannot contain `_`, hence the dot). The trailing number is the
-run number of the workflow; the full commit id is in
-`/usr/share/doc/retrobox-mangohud/BUILDINFO`. A build of anything that is not a
-release tag (a branch or a commit, by manual dispatch) is versioned
-`0.0.0+git<date>.<time>.<sha>`.
+The trailing number is the run number of the workflow. The release is tagged
+`build-v0.8.4-20260527_140811-<hash>`, where `YYYYMMDD_HHMMSS` is the UTC date
+and time of the commit the tag points to; that date and the full commit id are
+also in `/usr/share/doc/retrobox-mangohud/BUILDINFO`. A build of anything that
+is not a release tag (a branch or a commit, by manual dispatch) is versioned
+`<YYYYMMDD>.<HHMMSS>` of its commit.
 
 ## What gets installed
 
@@ -90,18 +90,44 @@ not part of this package.
 
 ## Patches
 
-`patches/` is the net difference between a clean upstream tag and the Retrobox
-branch, one patch per changed file, plus `patches/BASE`, the tag they were made
-against.
+`patches/` is the series applied, in file-name order, to a clean upstream
+release, plus `patches/BASE`, the tag they were made against. Batocera's
+patches come first and the Retrobox ones on top, as in `retrobox-core`'s
+installer (`setup/utils/mangohud.sh`):
 
-Generate it from your local fork:
+| Patch | Origin | What it does |
+|-------|--------|--------------|
+| `0001` | Batocera `003-add-sm8250` | CPU temperature from `cpu0_thermal` (Batocera RPMini, SM8250) |
+| `0002` | Batocera `004-Add-Qcom-Bat-Support` | recognise the `qcom-battmgr-bat` battery |
+| `0003` | Batocera `005-hotkeys` | a single default hotkey, `Shift_R+Undo` (`toggle_hud`); the rest are unbound |
+| `0004` | Batocera `006-no-csv-file` | no log summary CSV when logging stops |
+| `0005` | Batocera `007-msm-gpu-stats` | GPU statistics on the mainline `msm` driver |
+| `0006` | Batocera `008-mali-profiling` | switch on the `panfrost`/`panthor` profiling |
+| `0007` | Nicolas Adenis-Lamarre | `stb_image`, `stb_image_resize2` and the texture loader |
+| `0008` | Retrobox | the `image`, `image_max_width` and `background_image` options (OpenGL and Vulkan) |
 
-```bash
-scripts/make-patches.sh /var/penguin/desarrollo/mangohud v0.8.4 v0.8.4_br
-git add patches && git commit -m "Update patches"
-```
+Batocera's `001-no-mangohud.json` is **not** used: its only effect is to stop
+MangoHud's own Vulkan layer from being installed, and this package already
+replaces that layer with the Retrobox one (see `scripts/stage.sh`).
 
-(`--single` writes one patch instead of one per file.)
+The patches are normalised: each applies exactly to the tag in `patches/BASE`
+and carries full blob ids, which is what the 3-way fallback below needs
+(Batocera's originals do not apply with `git apply` and have no blob ids).
+Comments and commit messages are in English.
+
+### Changing the series
+
+* **Batocera adds or changes a patch** in `package/batocera/utils/mangohud/`:
+  apply it to a clean checkout of `patches/BASE` (`patch -p1 --fuzz=3` if it
+  was made for another version), commit it with the original author and a
+  `Taken from batocera.linux, ...` line, and export it with
+  `git format-patch -1 --full-index --no-signature --zero-commit`. Name it
+  `NNNN-batocera-<what>.patch`, before the Retrobox ones.
+* **A Retrobox change:** commit it on top of the series applied to a clean
+  checkout and export it the same way. Keep Batocera's changes out of it, so
+  the origin (and the licence) of each patch stays clear.
+* **A new upstream release:** nothing to do if the patches still merge; if not,
+  the build names the patch and the file, see below.
 
 ### How it copes with new upstream releases
 
@@ -143,23 +169,23 @@ PKG_REVISION=1 scripts/build-deb.sh work/src dist   # or build-rpm.sh (same MICR
 ## Licensing
 
 * This repository (scripts, workflow, packaging) is MIT, see `LICENSE`.
-* MangoHud is MIT. The patches are derivative works of it and are MIT as well,
-  so upstream's copyright notice is kept: it is installed, verbatim, in
-  `/usr/share/doc/retrobox-mangohud/licenses/`.
-* **Batocera.** The MangoHud patches of the `batocera.linux` repository are
-  LGPL-3.0-or-later (The Batocera Team). If any part of `patches/` derives from
-  them (for instance because the fork merged the `trixie-batocera-*` branch),
-  that part keeps that licence, and `copyright`, the rpm `License:` field and
-  `licenses/LGPL-3.0.txt` + `GPL-3.0.txt` already say so. Because the patches
-  are in this repository and the libraries are shared objects that can be
-  replaced, the LGPL conditions are met. If nothing in `patches/` comes from
-  Batocera, remove the LGPL-3.0 paragraph, the two texts and the `License:`
-  entry. **Do not add code from a project with an incompatible licence
-  without checking it first**: the whole library would be affected.
+* MangoHud is MIT. The Retrobox patch `0008` is a derivative work of it and is
+  MIT as well, so upstream's copyright notice is kept: it is installed,
+  verbatim, in `/usr/share/doc/retrobox-mangohud/licenses/`.
+* **Batocera.** Patches `0001` to `0006` come from `batocera.linux`, which is
+  LGPL-3.0-or-later (The Batocera Team). Their added lines keep that licence;
+  `copyright`, the rpm `License:` field and `licenses/LGPL-3.0.txt` +
+  `GPL-3.0.txt` say so. The patches are in this repository and the libraries
+  are shared objects that can be replaced, so the LGPL conditions are met.
+* **`0007`** (Nicolas Adenis-Lamarre, 2021) states no licence of its own; it is
+  treated as MIT like MangoHud. It adds the `stb_image` and `stb_image_resize2`
+  headers (MIT or public domain, your choice), whose notices are installed.
+  **Do not add code from a project with an incompatible licence without
+  checking it first**: the whole library would be affected.
 * MangoHud statically links imgui, implot, spdlog (with {fmt}) and the Vulkan
   headers and utility libraries, and embeds third-party code (elfhacks/Zlib,
-  ghc::filesystem/MIT, Khronos headers, Mesa code, the NVIDIA NVML header) and
-  the Fork Awesome font (OFL-1.1). All of it is described in
+  ghc::filesystem/MIT, Khronos headers, Mesa code, the NVIDIA NVML header, stb)
+  and the Fork Awesome font (OFL-1.1). All of it is described in
   `packaging/copyright`; the verbatim licence files and notices are copied
   from the source tree at build time into `licenses/`.
 * `scripts/check-licenses.sh` runs in every build and **fails** when upstream

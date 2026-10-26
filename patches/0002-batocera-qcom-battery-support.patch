@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: FantasyGmm <16450052+FantasyGmm@users.noreply.github.com>
+Date: Wed, 5 Feb 2025 03:46:42 +0000
+Subject: [PATCH] Add Qcom Bat Support
+
+Also recognise the qcom-battmgr-bat power supply as a battery.
+
+Taken from batocera.linux, package/batocera/utils/mangohud/004-Add-Qcom-Bat-Support.patch
+(LGPL-3.0-or-later, Copyright The Batocera Team).
+
+diff --git a/src/battery.cpp b/src/battery.cpp
+index 1612bff52c7031d3cf406f02e7795b423ee383ea..49d861d87b266def47febce2badd16f83e0a671d 100644
+--- a/src/battery.cpp
++++ b/src/battery.cpp
+@@ -13,7 +13,7 @@ void BatteryStats::numBattery() {
+     fs::path path("/sys/class/power_supply/");
+     for (auto& p : fs::directory_iterator(path)) {
+         string fileName = p.path().filename();
+-        if (fileName.find("BAT") != std::string::npos) {
++	if (fileName.find("BAT") != std::string::npos || fileName.find("qcom-battmgr-bat") != std::string::npos) {
+             battPath[batteryCount] = p.path();
+             batteryCount += 1;
+         }

@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: The Batocera Team <batocera-linux@users.noreply.github.com>
+Date: Tue, 22 Oct 2024 11:55:44 -0700
+Subject: [PATCH] Read the CPU temperature from cpu0_thermal on the Batocera
+ RPMini
+
+On the Qualcomm SM8250 (Batocera RPMini) the CPU temperature sensor is
+called cpu0_thermal; look for it in the thermal zones.
+
+Taken from batocera.linux, package/batocera/utils/mangohud/003-add-sm8250.patch
+(LGPL-3.0-or-later, Copyright The Batocera Team).
+
+diff --git a/src/cpu.cpp b/src/cpu.cpp
+index f46fabad1a7b461e2064170016b57baef2e605dc..2e9771059b80dd1b2025ddd88f29fd8b2eb1911f 100644
+--- a/src/cpu.cpp
++++ b/src/cpu.cpp
+@@ -615,6 +615,10 @@ bool CPUStats::GetCpuFile() {
+         } else if (name == "apm_xgene") {
+             find_input(path, "temp", input, "SoC Temperature");
+             break;
++        } else if (name == "cpu0_thermal") { // Batocera RPMini sm8250
++            find_input(path, "temp", input, "temp1");
++            break;
++
+         } else {
+             path.clear();
+         }

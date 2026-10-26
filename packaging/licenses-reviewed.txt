@@ -29,6 +29,9 @@ include/filesystem.h
 include/nvml.h
 
 # vendored or derived in src/
+# (stb_image.h and stb_image_resize2.h are added by the Retrobox patches)
+src/stb_image.h
+src/stb_image_resize2.h
 src/vulkan.cpp
 src/mesa/
 src/forkawesome.h

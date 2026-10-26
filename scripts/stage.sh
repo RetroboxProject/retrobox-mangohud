@@ -134,6 +134,13 @@ extract elfhacks.NOTICE       include/elfhacks.h          '/\/\* elfhacks.h --/{
 extract nvml.NOTICE           include/nvml.h              'f==0&&/\/\*/{f=1} f{print} f&&/\*\//{exit}'
 extract khrplatform.NOTICE    include/KHR/khrplatform.h   'f==0&&/\/\*/{f=1} f{print} f&&/\*\//{exit}'
 extract ghc-filesystem.NOTICE include/filesystem.h        '/^\/\//{print; next} {exit}'
+# stb_*.h are added by the Retrobox patches: dual licensed (MIT or public
+# domain), the licence text is at the end of each header.
+for stb in stb_image stb_image_resize2; do
+    if [[ -f "${SRC}/src/${stb}.h" ]]; then
+        extract "${stb}.NOTICE" "src/${stb}.h" '/This software is available under 2 licenses/{f=1} f&&/^\*\//{exit} f{print}'
+    fi
+done
 
 # --- patches and build information --------------------------------------------
 install -m 644 "${REPO_ROOT}/patches/BASE" "${DOC}/patches/BASE"

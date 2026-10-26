@@ -104,7 +104,8 @@ fi
 # Licence notices must travel with the binary (checked in the package itself).
 DOC=/usr/share/doc/retrobox-mangohud
 for f in copyright BUILDINFO licenses/MIT.txt licenses/mangohud.LICENSE licenses/imgui.LICENSE.txt \
-         licenses/spdlog.LICENSE licenses/Apache-2.0.txt licenses/elfhacks.NOTICE licenses/nvml.NOTICE; do
+         licenses/spdlog.LICENSE licenses/Apache-2.0.txt licenses/elfhacks.NOTICE licenses/nvml.NOTICE \
+         licenses/stb_image.NOTICE licenses/stb_image_resize2.NOTICE licenses/LGPL-3.0.txt; do
     grep -qxF "${DOC}/${f}" <<<"${FILES}" || fail "${DOC}/${f} is not in the package"
 done
 

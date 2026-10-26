@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: The Batocera Team <batocera-linux@users.noreply.github.com>
+Date: Thu, 1 Jan 2026 00:00:00 +0000
+Subject: [PATCH] Enable the panfrost/panthor profiling switch
+
+panfrost and panthor only report per-job GPU time in fdinfo while the sysfs
+profiling switch is on, so the GPU load reads 0. Switch it on when MangoHud
+starts collecting GPU stats.
+
+Taken from batocera.linux, package/batocera/utils/mangohud/008-mali-profiling.patch
+(LGPL-3.0-or-later, Copyright The Batocera Team).
+
+diff --git a/src/gpu_fdinfo.cpp b/src/gpu_fdinfo.cpp
+index d1c17f7c8ac26c6776e2b57ff3c4d144e84ed652..db2b20cc2e3c864a23d5ea9a7fccf37c78395350 100644
+--- a/src/gpu_fdinfo.cpp
++++ b/src/gpu_fdinfo.cpp
+@@ -128,6 +128,23 @@ uint64_t GPU_fdinfo::get_gpu_time()
+     return total;
+ }
+ 
++// panfrost and panthor only put per-job GPU time in fdinfo with profiling on
++void GPU_fdinfo::enable_mali_profiling()
++{
++    std::string path = "/sys/class/drm/" + drm_node + "/device/profiling";
++    std::string val;
++    std::ifstream in(path);
++
++    if (!in.is_open() || !std::getline(in, val) || val == "1")
++        return;
++
++    std::ofstream out(path);
++    out << "1";
++
++    if (!out)
++        SPDLOG_WARN("{}: cannot enable profiling, gpu load will read 0", path);
++}
++
+ uint64_t GPU_fdinfo::get_gpu_time_panfrost() {
+     uint64_t total = 0;
+ 
+diff --git a/src/gpu_fdinfo.h b/src/gpu_fdinfo.h
+index 8e8d660c5eb2ea027f421da6fc55f890e835d676..e4a4a082443a88a801d61e6bf6138cd8b8c3b88b 100644
+--- a/src/gpu_fdinfo.h
++++ b/src/gpu_fdinfo.h
+@@ -99,6 +99,7 @@ private:
+     int get_gpu_clock();
+ 
+     uint64_t get_gpu_time_panfrost();
++    void enable_mali_profiling();
+     int get_gpu_clock_mali();
+ 
+     std::ifstream throttle_status_stream;
+@@ -158,6 +159,9 @@ public:
+             drm_memory_type = "drm-resident-memory";
+         }
+ 
++        if (module == "panfrost" || module == "panthor")
++            enable_mali_profiling();
++
+         if (fdinfo_data.size() > 0 &&
+             fdinfo_data[0].find(drm_memory_type) == fdinfo_data[0].end())
+         {

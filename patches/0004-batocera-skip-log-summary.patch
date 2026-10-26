@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: The Batocera Team <batocera-linux@users.noreply.github.com>
+Date: Thu, 1 Jan 2026 00:00:00 +0000
+Subject: [PATCH] Do not write the log summary when logging stops
+
+Skip writeSummary(), so no summary CSV file is created.
+
+Taken from batocera.linux, package/batocera/utils/mangohud/006-no-csv-file.patch
+(LGPL-3.0-or-later, Copyright The Batocera Team).
+
+diff --git a/src/logging.cpp b/src/logging.cpp
+index f542fcfbf021b72e64bd0920b50f6ff1ab44cb41..8eb1edd91fc5133010352d25333e2b0b3bdb51bd 100644
+--- a/src/logging.cpp
++++ b/src/logging.cpp
+@@ -292,7 +292,8 @@ void Logger::stop_logging() {
+   }
+ 
+   if (!m_log_files.empty())
+-    writeSummary(m_log_files.back());
++    // Batocera: skip log summary
++    SPDLOG_INFO("");
+   else
+     SPDLOG_INFO("Can't write summary because m_log_files is empty");
+ 

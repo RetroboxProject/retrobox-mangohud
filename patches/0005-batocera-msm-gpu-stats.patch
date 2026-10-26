@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: The Batocera Team <batocera-linux@users.noreply.github.com>
+Date: Thu, 1 Jan 2026 00:00:00 +0000
+Subject: [PATCH] Fix the GPU statistics of the mainline msm driver
+
+MangoHud matches the device driver name msm_dpu against the fdinfo drm-driver
+field, which the mainline msm kernel driver reports as "msm", so every GPU fd
+is dropped and the load reads 0. Also read the clock from devfreq and the
+temperature from the gpu thermal zone.
+
+Taken from batocera.linux, package/batocera/utils/mangohud/007-msm-gpu-stats.patch
+(LGPL-3.0-or-later, Copyright The Batocera Team).
+
+diff --git a/src/gpu_fdinfo.cpp b/src/gpu_fdinfo.cpp
+index 0fdd99e83621b52220c3ea187103a9f6451bca22..d1c17f7c8ac26c6776e2b57ff3c4d144e84ed652 100644
+--- a/src/gpu_fdinfo.cpp
++++ b/src/gpu_fdinfo.cpp
+@@ -55,7 +55,7 @@ void GPU_fdinfo::find_fd()
+                 client_id = val;
+         }
+ 
+-        if (!driver.empty() && driver == module) {
++        if (!driver.empty() && driver == fdinfo_driver()) {
+             total++;
+             SPDLOG_TRACE(
+                 "driver = \"{}\", pdev = \"{}\", "
+@@ -67,7 +67,7 @@ void GPU_fdinfo::find_fd()
+ 
+         if (
+             driver.empty() || client_id.empty() ||
+-            driver != module || pdev != pci_dev ||
++            driver != fdinfo_driver() || pdev != pci_dev ||
+             client_ids.find(client_id) != client_ids.end()
+         )
+             continue;
+@@ -175,7 +175,7 @@ void GPU_fdinfo::find_hwmon_sensors()
+ {
+     std::string hwmon;
+ 
+-    if (module == "msm")
++    if (module == "msm" || module == "msm_dpu")
+         hwmon = find_hwmon_sensor_dir("gpu");
+     else if (module == "panfrost" || module == "panthor")
+         hwmon = find_hwmon_sensor_dir("gpu_thermal");
+@@ -539,6 +539,28 @@ int GPU_fdinfo::get_gpu_clock()
+     if (module == "panfrost" || module == "panthor")
+         return get_gpu_clock_mali();
+ 
++    // mainline msm has no kgsl clock_mhz, the gpu devfreq reports Hz
++    if (module == "msm_dpu") {
++        if (!gpu_clock_stream.is_open()) {
++            for (const auto& entry : fs::directory_iterator("/sys/class/devfreq")) {
++                auto name = entry.path().filename().string();
++                if (name.size() > 4 && name.compare(name.size() - 4, 4, ".gpu") == 0) {
++                    gpu_clock_stream.open(entry.path() / "cur_freq");
++                    break;
++                }
++            }
++        }
++
++        if (!gpu_clock_stream.is_open())
++            return 0;
++
++        std::string hz;
++        gpu_clock_stream.seekg(0);
++        std::getline(gpu_clock_stream, hz);
++
++        return hz.empty() ? 0 : std::stoll(hz) / 1'000'000;
++    }
++
+     if (!gpu_clock_stream.is_open())
+         return 0;
+ 
+diff --git a/src/gpu_fdinfo.h b/src/gpu_fdinfo.h
+index 97e62e52651cc9e623b344aa9af63ee491dd10a5..8e8d660c5eb2ea027f421da6fc55f890e835d676 100644
+--- a/src/gpu_fdinfo.h
++++ b/src/gpu_fdinfo.h
+@@ -44,6 +44,8 @@ private:
+     pid_t pid = getpid();
+ 
+     const std::string module;
++    // the msm_dpu device reports "msm" as drm-driver in fdinfo
++    std::string fdinfo_driver() const { return module == "msm_dpu" ? "msm" : module; }
+     const std::string pci_dev;
+     const std::string drm_node;
+ 

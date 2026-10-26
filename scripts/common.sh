@@ -83,11 +83,11 @@ PATCH_BASE="$(tr -d '[:space:]' < "${REPO_ROOT}/patches/BASE")"
 #   MH_DATE / MH_TIME      YYYYMMDD / HHMMSS
 #   MH_STAMP               YYYYMMDD_HHMMSS
 #   MH_SHA / MH_SHA_FULL   7-char / full commit id
-#   MH_DEB_VERSION         0.8.4+20260527.142530   (release tag)
-#                          0.0.0+git20260527.142530.992103e   (anything else)
-#   MH_RPM_VERSION         0.8.4^20260527.142530
-#                          0.0.0^20260527.142530git992103e
-# A Debian version cannot contain "_", so the stamp is written with a dot.
+#   MH_DEB_VERSION         0.8.4              (a release tag: the tag's version)
+#                          20260527.142530    (anything else: date.time of the commit)
+#   MH_RPM_VERSION         same as MH_DEB_VERSION
+# A Debian version cannot contain "_", so the stamp is written with a dot. The
+# commit id and the date of a release tag are in BUILDINFO and in the release.
 mh_snapshot() {
     local src="$1" ct
     MH_REF="$(cat "${src}/.git/retrobox-ref")"
@@ -98,12 +98,11 @@ mh_snapshot() {
     MH_SHA="$(git -C "${src}" rev-parse --short=7 HEAD)"
     MH_SHA_FULL="$(git -C "${src}" rev-parse HEAD)"
     if [[ "${MH_REF}" =~ ^v([0-9]+(\.[0-9]+)*)$ ]]; then
-        MH_DEB_VERSION="${BASH_REMATCH[1]}+${MH_DATE}.${MH_TIME}"
-        MH_RPM_VERSION="${BASH_REMATCH[1]}^${MH_DATE}.${MH_TIME}"
+        MH_DEB_VERSION="${BASH_REMATCH[1]}"
     else
-        MH_DEB_VERSION="0.0.0+git${MH_DATE}.${MH_TIME}.${MH_SHA}"
-        MH_RPM_VERSION="0.0.0^${MH_DATE}.${MH_TIME}git${MH_SHA}"
+        MH_DEB_VERSION="${MH_DATE}.${MH_TIME}"
     fi
+    MH_RPM_VERSION="${MH_DEB_VERSION}"
     SOURCE_DATE_EPOCH="${ct}"
     export MH_REF MH_DATE MH_TIME MH_STAMP MH_SHA MH_SHA_FULL MH_DEB_VERSION MH_RPM_VERSION SOURCE_DATE_EPOCH
 }

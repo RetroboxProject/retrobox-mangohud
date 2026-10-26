@@ -20,16 +20,47 @@ Copyright: 2020 flightlessmango
            the MangoHud contributors
 License: MIT
 
-Files: patches/*
-       scripts/*
+Files: scripts/*
        packaging/*
+       patches/0008-*
 Copyright: 2026 Manu Romero
 License: MIT
 Comment:
- Retrobox patches and packaging (repository retrobox-mangohud). Any part of a
- patch derived from a patch of the batocera.linux repository (MangoHud
- package of Batocera) stays under the licence of that repository,
- LGPL-3.0-or-later, Copyright The Batocera Team; see licenses/LGPL-3.0.txt.
+ Retrobox packaging (repository retrobox-mangohud) and the Retrobox patch that
+ adds the image, image_max_width and background_image options.
+
+Files: patches/0001-batocera-*
+       patches/0002-batocera-*
+       patches/0003-batocera-*
+       patches/0004-batocera-*
+       patches/0005-batocera-*
+       patches/0006-batocera-*
+Copyright: The Batocera Team
+           FantasyGmm (patch 0002, as its header says)
+License: LGPL-3.0+
+Comment:
+ Taken from batocera.linux, package/batocera/utils/mangohud/ (003 to 008;
+ 001, which stops MangoHud's own Vulkan layer from being installed, is not
+ used). Each patch says which file it comes from. The patches change MangoHud
+ files, which are MIT; the added lines are the ones under LGPL-3.0-or-later.
+
+Files: patches/0007-*
+Copyright: 2021 Nicolas Adenis-Lamarre
+License: MIT
+Comment:
+ Adds src/load_textures.{cpp,h} and the stb headers (described below). The
+ patch states no licence of its own; it is a contribution to MangoHud and is
+ treated as MIT, like MangoHud.
+
+Files: src/stb_image.h
+       src/stb_image_resize2.h
+Copyright: 2017 Sean Barrett
+           Jeff Roberts and Jorge L Rodriguez (stb_image_resize2)
+License: MIT or Unlicense
+Comment:
+ stb libraries, added by patch 0007. Dual licensed, choose either; the text is
+ at the end of each header and is copied verbatim to
+ licenses/stb_image.NOTICE and licenses/stb_image_resize2.NOTICE.
 
 Files: subprojects/imgui*
 Copyright: 2014-2024 Omar Cornut

@@ -8,7 +8,7 @@ PKG_NAME="retrobox-mangohud"
 
 # Private prefix, the one retrobox-core looks for (MANGOHUD_PREFIX_DIR): it
 # never shadows, nor is shadowed by, a MangoHud installed by the distro.
-PREFIX="${PREFIX:-/opt/retrobox/resources/mangohud}"
+PREFIX="${PREFIX:-/opt/retrobox/libexec/mangohud}"
 LIBDIR_REL="lib/mangohud/lib64"
 
 # --- target -------------------------------------------------------------------
@@ -86,6 +86,9 @@ PATCH_BASE="$(tr -d '[:space:]' < "${REPO_ROOT}/patches/BASE")"
 #   MH_DEB_VERSION         0.8.4              (a release tag: the tag's version)
 #                          20260527.142530    (anything else: date.time of the commit)
 #   MH_RPM_VERSION         same as MH_DEB_VERSION
+#   MH_REV_DATE            .20260527.140811   (a release tag: commit date and time,
+#                          appended to the package revision)
+#                          empty              (anything else: the version has it)
 # A Debian version cannot contain "_", so the stamp is written with a dot. The
 # commit id and the date of a release tag are in BUILDINFO and in the release.
 mh_snapshot() {
@@ -99,10 +102,27 @@ mh_snapshot() {
     MH_SHA_FULL="$(git -C "${src}" rev-parse HEAD)"
     if [[ "${MH_REF}" =~ ^v([0-9]+(\.[0-9]+)*)$ ]]; then
         MH_DEB_VERSION="${BASH_REMATCH[1]}"
+        MH_REV_DATE=".${MH_DATE}.${MH_TIME}"
     else
         MH_DEB_VERSION="${MH_DATE}.${MH_TIME}"
+        MH_REV_DATE=""
     fi
     MH_RPM_VERSION="${MH_DEB_VERSION}"
     SOURCE_DATE_EPOCH="${ct}"
-    export MH_REF MH_DATE MH_TIME MH_STAMP MH_SHA MH_SHA_FULL MH_DEB_VERSION MH_RPM_VERSION SOURCE_DATE_EPOCH
+    export MH_REF MH_DATE MH_TIME MH_STAMP MH_SHA MH_SHA_FULL MH_DEB_VERSION MH_RPM_VERSION MH_REV_DATE SOURCE_DATE_EPOCH
+}
+
+# distro_tag: short name of the distribution this runs on (deb13, ubuntu24.04).
+# It ends up in the version of the .deb, which is what tells apart the packages
+# of two distributions (their library dependencies differ).
+distro_tag() {
+    (
+        # shellcheck disable=SC1091
+        . /etc/os-release
+        case "${ID}" in
+            debian) echo "deb${VERSION_ID}" ;;
+            ubuntu) echo "ubuntu${VERSION_ID}" ;;
+            *)      echo "${ID}${VERSION_ID}" ;;
+        esac
+    )
 }

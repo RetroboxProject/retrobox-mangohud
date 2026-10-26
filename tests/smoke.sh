@@ -82,7 +82,7 @@ SPEC
     *) fail "unsupported package type: ${PKG}" ;;
 esac
 
-PREFIX=/opt/retrobox/resources/mangohud
+PREFIX=/opt/retrobox/libexec/mangohud
 LIBDIR="${PREFIX}/lib/mangohud/lib64"
 LAYER_DIR="${PREFIX}/share/vulkan/implicit_layer.d"
 
@@ -121,7 +121,7 @@ lib_in_json="$(sed -n 's/.*"library_path": *"\([^"]*\)".*/\1/p' "${layer}")"
 
 # Private: nothing outside the prefix except the environment.d file and docs,
 # and no ldconfig registration.
-stray="$(grep -vE "^(${PREFIX}(/|$)|/usr/lib/environment\.d(/64-retrobox-mangohud\.conf)?$|/usr/share/doc(/retrobox-mangohud(/.*)?)?$|/opt(/retrobox(/resources)?)?$|/usr(/lib|/share)?$|/\.?$)" <<<"${FILES}" || true)"
+stray="$(grep -vE "^(${PREFIX}(/|$)|/usr/lib/environment\.d(/64-retrobox-mangohud\.conf)?$|/usr/share/doc(/retrobox-mangohud(/.*)?)?$|/opt(/retrobox(/libexec)?)?$|/usr(/lib|/share)?$|/\.?$)" <<<"${FILES}" || true)"
 [[ -z "${stray}" ]] || fail "files outside the private prefix:
 ${stray}"
 [[ ! -e /etc/ld.so.conf.d/mangohud.conf ]] || fail "the private libdir must not be registered with ldconfig"

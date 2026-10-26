@@ -4,9 +4,9 @@
 #   scripts/stage.sh SRC DESTDIR
 #
 # Layout (relative to DESTDIR):
-#   /opt/retrobox/resources/mangohud/bin/mangohud                  wrapper
-#   /opt/retrobox/resources/mangohud/lib/mangohud/lib64/*.so       libraries
-#   /opt/retrobox/resources/mangohud/share/vulkan/implicit_layer.d/
+#   /opt/retrobox/libexec/mangohud/bin/mangohud                  wrapper
+#   /opt/retrobox/libexec/mangohud/lib/mangohud/lib64/*.so       libraries
+#   /opt/retrobox/libexec/mangohud/share/vulkan/implicit_layer.d/
 #                                       RetroboxMangoHud.<arch>.json
 #   /usr/lib/environment.d/64-retrobox-mangohud.conf
 #   /usr/share/doc/retrobox-mangohud/{copyright,licenses/,patches/,BUILDINFO}

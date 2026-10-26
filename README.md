@@ -12,6 +12,11 @@ package in a clean container.
 
 ## Packages
 
+The set of distributions is not written in the workflow: each run resolves it
+(`scripts/resolve-matrix.py`, from endoflife.date, only releases whose container
+image already exists) as the **latest Debian stable, the last two Ubuntu LTS and
+the last two Fedora releases**. Today that is:
+
 | Distribution          | Format | Built on                       |
 |-----------------------|--------|--------------------------------|
 | Debian 13             | `.deb` | `debian:trixie`                |
@@ -21,35 +26,40 @@ package in a clean container.
 Download the file for your distribution from the
 [latest release](../../releases/latest). The package depends on `retrobox-core`.
 
-### Architectures
+### File names and versions
 
-Every release has each package for two CPU targets. The architecture is the
-last part of the file name, written the way each distribution family does it:
+Each family names its packages its own way, and the version carries the UTC
+date and time of the upstream commit the build is made from:
+
+| Format | Convention | Example |
+|--------|------------|---------|
+| `.deb` | `<package>_<version>_<arch>.deb` | `retrobox-mangohud_0.8.4-12.20260527.140811~ubuntu24.04_amd64.deb` |
+| `.rpm` | `<name>-<version>-<release>.<arch>.rpm` | `retrobox-mangohud-0.8.4-12.20260527.140811.fc44.aarch64.rpm` |
+
+* `0.8.4` is the upstream release tag (the **latest stable one**). A build of a
+  branch or a commit, by manual dispatch, is versioned `<YYYYMMDD>.<HHMMSS>` of
+  its commit instead.
+* `12` is the run number of the workflow; `20260527.140811` is
+  `YYYYMMDD.HHMMSS`. (An underscore, as in the release tag, is not allowed in a
+  Debian version, so the dot is used.)
+* The distribution is in the version of the `.deb` (`~deb13`, `~ubuntu24.04`,
+  `~ubuntu26.04`) and in the `dist` tag of the `.rpm` (`.fc43`, `.fc44`): the
+  packages differ per distribution, because their library dependencies do.
+  GitHub shows the `~` of a `.deb` as a `.` in the name of the downloadable file.
+* The architecture, as each family writes it:
 
 | Target | `.deb` (Debian, Ubuntu) | `.rpm` (Fedora) | Runs on |
 |--------|-------------------------|-----------------|---------|
-| x86-64 | `..._amd64.deb` | `....x86_64.rpm` | any 64-bit PC |
-| 64-bit ARM | `..._arm64.deb` | `....aarch64.rpm` | ARM64 machines |
+| x86-64 | `amd64` | `x86_64` | any 64-bit PC |
+| 64-bit ARM | `arm64` | `aarch64` | ARM64 machines |
 
 There are no x86-64-v3 builds for now. `scripts/build.sh` and the packaging
-scripts still accept `MICROARCH=v3` for local builds.
+scripts still accept `MICROARCH=v3` for local builds (the architecture then
+reads `amd64v3` / `x86_64_v3`).
 
-### Versions
-
-Each package is built from the **latest stable upstream release tag** and its
-version is the tag's:
-
-| Format | Example |
-|--------|---------|
-| `.deb` | `0.8.4-12~ubuntu24.04` |
-| `.rpm` | `0.8.4-12.fc44` |
-
-The trailing number is the run number of the workflow. The release is tagged
-`build-v0.8.4-20260527_140811-<hash>`, where `YYYYMMDD_HHMMSS` is the UTC date
-and time of the commit the tag points to; that date and the full commit id are
-also in `/usr/share/doc/retrobox-mangohud/BUILDINFO`. A build of anything that
-is not a release tag (a branch or a commit, by manual dispatch) is versioned
-`<YYYYMMDD>.<HHMMSS>` of its commit.
+The release itself is tagged `build-v0.8.4-20260527_140811-<hash>` (same date
+and time, written `YYYYMMDD_HHMMSS`). The full commit id is in
+`/usr/share/doc/retrobox-mangohud/BUILDINFO`.
 
 ## What gets installed
 
@@ -58,9 +68,9 @@ of the distribution without either shadowing the other:
 
 | Path | Content |
 |------|---------|
-| `/opt/retrobox/resources/mangohud/bin/mangohud` | wrapper (absolute libdir baked in, no `$LIB`) |
-| `/opt/retrobox/resources/mangohud/lib/mangohud/lib64/` | `libMangoHud.so` and friends |
-| `/opt/retrobox/resources/mangohud/share/vulkan/implicit_layer.d/RetroboxMangoHud.<arch>.json` | Vulkan layer `VK_LAYER_RETROBOX_MANGOHUD_overlay_<arch>`, enabled by `RETROBOX_MANGOHUD=1`, disabled by `RETROBOX_MANGOHUD_DISABLE` |
+| `/opt/retrobox/libexec/mangohud/bin/mangohud` | wrapper (absolute libdir baked in, no `$LIB`) |
+| `/opt/retrobox/libexec/mangohud/lib/mangohud/lib64/` | `libMangoHud.so` and friends |
+| `/opt/retrobox/libexec/mangohud/share/vulkan/implicit_layer.d/RetroboxMangoHud.<arch>.json` | Vulkan layer `VK_LAYER_RETROBOX_MANGOHUD_overlay_<arch>`, enabled by `RETROBOX_MANGOHUD=1`, disabled by `RETROBOX_MANGOHUD_DISABLE` |
 | `/usr/lib/environment.d/64-retrobox-mangohud.conf` | keeps the Retrobox layer off outside Retrobox |
 
 Upstream's own `MangoHud.<arch>.json` layer is not installed. Nothing is
@@ -124,7 +134,7 @@ names the file that needs attention, and the other patches are not affected.
    you give), computes the release tag
    (`build-<ref>-<commit date>-<hash of this repo's build inputs>`), stops if that release
    already exists, and checks that the patches apply.
-2. `build` – one job per distribution **and architecture** (10 in total, `arm64`/`aarch64` on native ARM runners): dependencies, fetch, patch, compile,
+2. `build` – one job per distribution **and architecture** (2 per distribution, `arm64`/`aarch64` on native ARM runners; the distributions come from `scripts/resolve-matrix.py`): dependencies, fetch, patch, compile,
    package.
 3. `test` – installs each package, on a runner of its own architecture, in a **clean** container (with a stub
    `retrobox-core`) and checks the wrapper, the layer, that nothing leaks out

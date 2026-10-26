@@ -5,6 +5,10 @@
 #
 # Environment: PKG_REVISION  package release number, bumped per build (default 1)
 #
+# Version <tag version>, release <revision>.<YYYYMMDD>.<HHMMSS>.fcNN (UTC date and
+# time of the upstream commit), e.g. 0.8.4-12.20260527.140811.fc44. The file is
+# named by rpmbuild with the Fedora convention, <name>-<version>-<release>.<arch>.rpm:
+#   retrobox-mangohud-0.8.4-12.20260527.140811.fc44.aarch64.rpm
 # Architecture, as the file name ends: x86_64 | x86_64_v3 | aarch64
 # (MICROARCH=v3 -> x86_64_v3, a real RPM architecture). The rpm in the build
 # container must know it; the script checks that before building.
@@ -42,7 +46,7 @@ rpmbuild -bb "${REPO_ROOT}/packaging/rpm/${PKG_NAME}.spec" \
     --define "_topdir ${WORK}/rpmbuild" \
     --define "_rpmdir ${OUTDIR}" \
     --define "mh_version ${MH_RPM_VERSION}" \
-    --define "pkg_revision ${PKG_REVISION:-1}" \
+    --define "pkg_revision ${PKG_REVISION:-1}${MH_REV_DATE}" \
     --define "stage ${WORK}/stage"
 
 find "${OUTDIR}" -name '*.rpm' -newer "${WORK}/stage" -print

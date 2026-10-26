@@ -31,7 +31,7 @@ Recommends:     vulkan-loader
 
 %description
 MangoHud built with the Retrobox patches (background_image/image) in a
-private prefix, /opt/retrobox/resources/mangohud, with its own Vulkan layer
+private prefix, /opt/retrobox/libexec/mangohud, with its own Vulkan layer
 (VK_LAYER_RETROBOX_MANGOHUD_*) switched on by RETROBOX_MANGOHUD=1.
 
 It does not replace, nor conflict with, the MangoHud package of the
@@ -42,7 +42,7 @@ mkdir -p %{buildroot}
 cp -a %{stage}/. %{buildroot}/
 
 %files
-/opt/retrobox/resources/mangohud
+/opt/retrobox/libexec/mangohud
 /usr/lib/environment.d/64-retrobox-mangohud.conf
 %license /usr/share/doc/retrobox-mangohud/copyright
 %license /usr/share/doc/retrobox-mangohud/licenses

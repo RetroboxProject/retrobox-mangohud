@@ -4,6 +4,8 @@ meson
 ninja-build
 gcc
 gcc-c++
+# MangoHud links with -static-libstdc++; Fedora ships libstdc++.a separately
+libstdc++-static
 binutils
 rpm-build
 pkgconf-pkg-config

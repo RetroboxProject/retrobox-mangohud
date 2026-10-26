@@ -127,23 +127,18 @@ jobs:
       matrix:
         include:
           - { name: debian-13-x86_64, image: 'debian:trixie', kind: deb, microarch: baseline, runner: ubuntu-latest }
-          - { name: debian-13-x86_64-v3, image: 'debian:trixie', kind: deb, microarch: v3, runner: ubuntu-latest }
           - { name: debian-13-aarch64, image: 'debian:trixie', kind: deb, microarch: baseline, runner: ubuntu-24.04-arm }
 
           - { name: ubuntu-24.04-x86_64, image: 'ubuntu:24.04', kind: deb, microarch: baseline, runner: ubuntu-latest }
-          - { name: ubuntu-24.04-x86_64-v3, image: 'ubuntu:24.04', kind: deb, microarch: v3, runner: ubuntu-latest }
           - { name: ubuntu-24.04-aarch64, image: 'ubuntu:24.04', kind: deb, microarch: baseline, runner: ubuntu-24.04-arm }
 
           - { name: ubuntu-26.04-x86_64, image: 'ubuntu:26.04', kind: deb, microarch: baseline, runner: ubuntu-latest }
-          - { name: ubuntu-26.04-x86_64-v3, image: 'ubuntu:26.04', kind: deb, microarch: v3, runner: ubuntu-latest }
           - { name: ubuntu-26.04-aarch64, image: 'ubuntu:26.04', kind: deb, microarch: baseline, runner: ubuntu-24.04-arm }
 
           - { name: fedora-43-x86_64, image: 'fedora:43', kind: rpm, microarch: baseline, runner: ubuntu-latest }
-          - { name: fedora-43-x86_64-v3, image: 'fedora:43', kind: rpm, microarch: v3, runner: ubuntu-latest }
           - { name: fedora-43-aarch64, image: 'fedora:43', kind: rpm, microarch: baseline, runner: ubuntu-24.04-arm }
 
           - { name: fedora-44-x86_64, image: 'fedora:44', kind: rpm, microarch: baseline, runner: ubuntu-latest }
-          - { name: fedora-44-x86_64-v3, image: 'fedora:44', kind: rpm, microarch: v3, runner: ubuntu-latest }
           - { name: fedora-44-aarch64, image: 'fedora:44', kind: rpm, microarch: baseline, runner: ubuntu-24.04-arm }
     steps:
       - name: Bootstrap (git)
@@ -196,23 +191,18 @@ jobs:
       matrix:
         include:
           - { name: debian-13-x86_64, image: 'debian:trixie', kind: deb, microarch: baseline, runner: ubuntu-latest, glob: '*.deb' }
-          - { name: debian-13-x86_64-v3, image: 'debian:trixie', kind: deb, microarch: v3, runner: ubuntu-latest, glob: '*.deb' }
           - { name: debian-13-aarch64, image: 'debian:trixie', kind: deb, microarch: baseline, runner: ubuntu-24.04-arm, glob: '*.deb' }
 
           - { name: ubuntu-24.04-x86_64, image: 'ubuntu:24.04', kind: deb, microarch: baseline, runner: ubuntu-latest, glob: '*.deb' }
-          - { name: ubuntu-24.04-x86_64-v3, image: 'ubuntu:24.04', kind: deb, microarch: v3, runner: ubuntu-latest, glob: '*.deb' }
           - { name: ubuntu-24.04-aarch64, image: 'ubuntu:24.04', kind: deb, microarch: baseline, runner: ubuntu-24.04-arm, glob: '*.deb' }
 
           - { name: ubuntu-26.04-x86_64, image: 'ubuntu:26.04', kind: deb, microarch: baseline, runner: ubuntu-latest, glob: '*.deb' }
-          - { name: ubuntu-26.04-x86_64-v3, image: 'ubuntu:26.04', kind: deb, microarch: v3, runner: ubuntu-latest, glob: '*.deb' }
           - { name: ubuntu-26.04-aarch64, image: 'ubuntu:26.04', kind: deb, microarch: baseline, runner: ubuntu-24.04-arm, glob: '*.deb' }
 
           - { name: fedora-43-x86_64, image: 'fedora:43', kind: rpm, microarch: baseline, runner: ubuntu-latest, glob: '*.rpm' }
-          - { name: fedora-43-x86_64-v3, image: 'fedora:43', kind: rpm, microarch: v3, runner: ubuntu-latest, glob: '*.rpm' }
           - { name: fedora-43-aarch64, image: 'fedora:43', kind: rpm, microarch: baseline, runner: ubuntu-24.04-arm, glob: '*.rpm' }
 
           - { name: fedora-44-x86_64, image: 'fedora:44', kind: rpm, microarch: baseline, runner: ubuntu-latest, glob: '*.rpm' }
-          - { name: fedora-44-x86_64-v3, image: 'fedora:44', kind: rpm, microarch: v3, runner: ubuntu-latest, glob: '*.rpm' }
           - { name: fedora-44-aarch64, image: 'fedora:44', kind: rpm, microarch: baseline, runner: ubuntu-24.04-arm, glob: '*.rpm' }
     steps:
       - uses: actions/checkout@v4
@@ -257,7 +247,7 @@ jobs:
           printf '%s\n' "${files[@]}"
           gh release create "${TAG}" --repo "${REPO}" --target "${GITHUB_SHA}" \
             --title "retrobox-mangohud ${REF} (${STAMP})" \
-            --notes "MangoHud ${REF} (\`${SHA}\`) with the patches in \`patches/\` applied. Built for Debian 13, Ubuntu 24.04/26.04 and Fedora 43/44, each for amd64 (x86_64), amd64v3 (x86_64_v3, needs an x86-64-v3 CPU) and arm64 (aarch64). Pick the file for your distribution and CPU: the architecture is at the end of the file name." \
+            --notes "MangoHud ${REF} (\`${SHA}\`) with the patches in \`patches/\` applied. Built for Debian 13, Ubuntu 24.04/26.04 and Fedora 43/44, each for amd64 (x86_64) and arm64 (aarch64). Pick the file for your distribution and CPU: the architecture is at the end of the file name." \
             "${files[@]}"
 
   # When the scheduled run fails (typically a patch that no longer applies to

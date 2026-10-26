@@ -23,35 +23,16 @@ Download the file for your distribution from the
 
 ### Architectures
 
-Every release has each package for three CPU targets. The architecture is the
+Every release has each package for two CPU targets. The architecture is the
 last part of the file name, written the way each distribution family does it:
 
 | Target | `.deb` (Debian, Ubuntu) | `.rpm` (Fedora) | Runs on |
 |--------|-------------------------|-----------------|---------|
-| baseline x86-64 | `..._amd64.deb` | `....x86_64.rpm` | any 64-bit PC |
-| x86-64-v3 | `..._amd64v3.deb` | `....x86_64_v3.rpm` | CPUs with AVX2, BMI2 and FMA (Intel Haswell / AMD Excavator, 2013-2015, or newer) |
+| x86-64 | `..._amd64.deb` | `....x86_64.rpm` | any 64-bit PC |
 | 64-bit ARM | `..._arm64.deb` | `....aarch64.rpm` | ARM64 machines |
 
-Which x86 one to take: if this lists `x86-64-v3 (supported, searched)`, the v3
-package will run, otherwise use the baseline one:
-
-```bash
-/lib64/ld-linux-x86-64.so.2 --help | grep 'x86-64-v'
-```
-
-Install only one of the two x86 packages: they are the same program built with
-different flags, with the same name and version.
-
-* **`amd64v3` is a variant, not a new architecture** (the convention of Ubuntu
-  25.10 and later): inside, the `.deb` says `Architecture: amd64` and
-  `Architecture-Variant: amd64v3`, so `dpkg`/`apt` on any release, Debian
-  included, install it as an ordinary amd64 package.
-* **`x86_64_v3` is a real RPM architecture.** It needs an `rpm` that knows it
-  (the build checks that) and, to *install* it, `rpm`/`dnf` on the target
-  system must accept it. Fedora is still rolling out its own x86_64_v3 support
-  (planned for Fedora 45), so on Fedora 43/44 `dnf install ./file.rpm` may
-  refuse it; the CI test falls back to installing the dependencies and using
-  `rpm -U`. If that fails too, use the plain `x86_64` package.
+There are no x86-64-v3 builds for now. `scripts/build.sh` and the packaging
+scripts still accept `MICROARCH=v3` for local builds.
 
 ### Versions
 
@@ -143,7 +124,7 @@ names the file that needs attention, and the other patches are not affected.
    you give), computes the release tag
    (`build-<ref>-<commit date>-<hash of this repo's build inputs>`), stops if that release
    already exists, and checks that the patches apply.
-2. `build` – one job per distribution **and architecture** (15 in total, `arm64`/`aarch64` on native ARM runners, `v3` with `-march=x86-64-v3`; the build checks that every unit got the flags of its target): dependencies, fetch, patch, compile,
+2. `build` – one job per distribution **and architecture** (10 in total, `arm64`/`aarch64` on native ARM runners): dependencies, fetch, patch, compile,
    package.
 3. `test` – installs each package, on a runner of its own architecture, in a **clean** container (with a stub
    `retrobox-core`) and checks the wrapper, the layer, that nothing leaks out
@@ -162,7 +143,7 @@ publishes either.
 ```bash
 sudo scripts/install-build-deps.sh                  # Debian/Ubuntu or Fedora
 scripts/fetch.sh work/src                           # --ref <tag|branch|sha>
-scripts/build.sh work/src                           # MICROARCH=v3 for x86-64-v3
+scripts/build.sh work/src                           # MICROARCH=v3 for a local x86-64-v3 build
 PKG_REVISION=1 scripts/build-deb.sh work/src dist   # or build-rpm.sh (same MICROARCH)
 ```
 

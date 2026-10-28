@@ -172,7 +172,7 @@ jobs:
           name: pkg-${{ matrix.name }}
           path: |
             dist/*.deb
-            dist/*.rpm
+            dist/**/*.rpm
           if-no-files-found: error
 
   # Install each package in a clean container, which proves that its

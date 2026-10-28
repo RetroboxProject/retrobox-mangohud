@@ -126,6 +126,13 @@ stray="$(grep -vE "^(${PREFIX}(/|$)|/usr/lib/environment\.d(/64-retrobox-mangohu
 ${stray}"
 [[ ! -e /etc/ld.so.conf.d/mangohud.conf ]] || fail "the private libdir must not be registered with ldconfig"
 
+# Nothing in the package may need python at run time (the target system is not
+# guaranteed to have it, and `#!/usr/bin/env python` is not valid on Debian,
+# Ubuntu or Fedora without extra packages). Python is a build-time tool only.
+py="$(grep -rIlE '^#![[:space:]]*[^[:space:]]*(/|[[:space:]])python' "${PREFIX}" || true)"
+[[ -z "${py}" ]] || fail "scripts that need python in the package:
+${py}"
+
 # Every ELF file must resolve all its shared libraries in a clean system.
 while IFS= read -r -d '' file; do
     if readelf -h "${file}" >/dev/null 2>&1 && ldd "${file}" 2>/dev/null | grep -q 'not found'; then

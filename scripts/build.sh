@@ -9,6 +9,10 @@
 #                                  wrapper instead of relying on ld.so's $LIB,
 #                                  which several launchers do not expand
 #   with_xnvctrl=disabled          no proprietary-driver X dependency
+#   mangoplot=disabled             upstream's log-plotting script: it needs python,
+#                                  numpy, matplotlib and a Qt backend, none of which
+#                                  Retrobox uses, and its `#!/usr/bin/env python`
+#                                  shebang is rejected by rpmbuild on Fedora
 # Only 64-bit is built: retrobox wraps 64-bit emulators only.
 #
 # Environment: MICROARCH  baseline (default) or v3, see common.sh. Each level
@@ -36,9 +40,12 @@ opts=(
     -Dwith_x11=enabled
     -Dwith_wayland=enabled
 )
-# Option present in some versions only.
+# Options present in some versions only.
 if grep -q "'with_mangohud_next'" "${SRC}/meson_options.txt" 2>/dev/null; then
     opts+=(-Dwith_mangohud_next=false)
+fi
+if grep -q "'mangoplot'" "${SRC}/meson_options.txt" 2>/dev/null; then
+    opts+=(-Dmangoplot=disabled)
 fi
 
 meson setup "${BUILD}" "${SRC}" "${opts[@]}"

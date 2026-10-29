@@ -29,7 +29,8 @@ Download the file for your distribution from the
 ### File names and versions
 
 Each family names its packages its own way, and the version carries the UTC
-date and time of the upstream commit the build is made from:
+date and time **of the build** (when it was packaged, not when upstream
+committed that version):
 
 | Format | Convention | Example |
 |--------|------------|---------|
@@ -38,9 +39,10 @@ date and time of the upstream commit the build is made from:
 
 * `0.8.4` is the upstream release tag (the **latest stable one**). A build of a
   branch or a commit, by manual dispatch, is versioned `<YYYYMMDD>.<HHMMSS>` of
-  its commit instead.
+  the build instead.
 * `12` is the run number of the workflow; `20260527.140811` is
-  `YYYYMMDD.HHMMSS`. (An underscore, as in the release tag, is not allowed in a
+  `YYYYMMDD.HHMMSS` of the build, in UTC. All the packages of one release
+  share it (it is fixed once per workflow run). (An underscore, as in the release tag, is not allowed in a
   Debian version, so the dot is used.)
 * The distribution is in the version of the `.deb` (`~deb13`, `~ubuntu24.04`,
   `~ubuntu26.04`) and in the `dist` tag of the `.rpm` (`.fc43`, `.fc44`): the
@@ -57,9 +59,9 @@ There are no x86-64-v3 builds for now. `scripts/build.sh` and the packaging
 scripts still accept `MICROARCH=v3` for local builds (the architecture then
 reads `amd64v3` / `x86_64_v3`).
 
-The release itself is tagged `build-v0.8.4-20260527_140811-<hash>` (same date
-and time, written `YYYYMMDD_HHMMSS`). The full commit id is in
-`/usr/share/doc/retrobox-mangohud/BUILDINFO`.
+The release itself is tagged `build-v0.8.4-20260527_140811-<commit>-<hash>` (same build
+date and time, written `YYYYMMDD_HHMMSS`). The full commit id and the date of
+the upstream commit are in `/usr/share/doc/retrobox-mangohud/BUILDINFO`.
 
 ## What gets installed
 
@@ -134,8 +136,8 @@ names the file that needs attention, and the other patches are not affected.
 
 1. `resolve` – picks the upstream ref (latest stable release tag, or the one
    you give), computes the release tag
-   (`build-<ref>-<commit date>-<hash of this repo's build inputs>`), stops if that release
-   already exists, and checks that the patches apply.
+   (`build-<ref>-<build date>-<upstream commit>-<hash of this repo's build inputs>`), stops if a
+   release of that same commit and inputs already exists (whatever its date), and checks that the patches apply.
 2. `build` – one job per distribution **and architecture** (2 per distribution, `arm64`/`aarch64` on native ARM runners; the distributions come from `scripts/resolve-matrix.py`): dependencies, fetch, patch, compile,
    package.
 3. `test` – installs each package, on a runner of its own architecture, in a **clean** container (with a stub

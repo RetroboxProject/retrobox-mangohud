@@ -6,7 +6,7 @@
 # Environment: PKG_REVISION  package release number, bumped per build (default 1)
 #
 # Version <tag version>, release <revision>.<YYYYMMDD>.<HHMMSS>.fcNN (UTC date and
-# time of the upstream commit), e.g. 0.8.4-12.20260527.140811.fc44. The file is
+# time of the build, not of the upstream commit), e.g. 0.8.4-12.20260527.140811.fc44. The file is
 # named by rpmbuild with the Fedora convention, <name>-<version>-<release>.<arch>.rpm:
 #   retrobox-mangohud-0.8.4-12.20260527.140811.fc44.aarch64.rpm
 # Architecture, as the file name ends: x86_64 | x86_64_v3 | aarch64

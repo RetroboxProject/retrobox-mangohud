@@ -54,6 +54,7 @@ jobs:
     outputs:
       ref: ${{ steps.r.outputs.ref }}
       stamp: ${{ steps.r.outputs.stamp }}
+      build_epoch: ${{ steps.r.outputs.build_epoch }}
       sha: ${{ steps.r.outputs.sha }}
       tag: ${{ steps.r.outputs.tag }}
       skip: ${{ steps.r.outputs.skip }}
@@ -88,6 +89,10 @@ jobs:
           scripts/fetch.sh --no-patch --ref "${ref}" "${RUNNER_TEMP}/upstream"
           # shellcheck source=scripts/common.sh
           . scripts/common.sh
+          # The date in the package version is the date of this run, shared by
+          # every build job so all packages of one release carry the same one.
+          MH_BUILD_EPOCH="$(date -u +%s)"
+          export MH_BUILD_EPOCH
           mh_snapshot "${RUNNER_TEMP}/upstream"
           sha="${MH_SHA_FULL}"
           # Everything that influences the result besides upstream itself,
@@ -95,7 +100,11 @@ jobs:
           inputs_hash="$({ cat patches/BASE patches/*.patch scripts/*.sh scripts/*.py licenses/*.txt \
             packaging/copyright packaging/*.txt packaging/deb/* packaging/rpm/*; \
             printf '%s' "${MATRIX}"; } | sha256sum | cut -c1-8)"
-          tag="build-${ref}-${MH_STAMP}-${inputs_hash}"
+          # The tag carries the build date, which changes on every run, so what
+          # tells whether this was already released is the suffix: the
+          # upstream commit plus the hash of the build inputs.
+          key="${MH_SHA}-${inputs_hash}"
+          tag="build-${ref}-${MH_STAMP}-${key}"
 
           publish=false
           case "${GITHUB_EVENT_NAME}" in
@@ -108,13 +117,17 @@ jobs:
           fi
 
           skip=false
-          if [[ "${publish}" == true ]] && gh release view "${tag}" >/dev/null 2>&1; then
-            skip=true
+          if [[ "${publish}" == true ]]; then
+            released="$(gh release list --limit 1000 --json tagName --jq '.[].tagName')"
+            if grep -qxE -- "build-${ref//./\\.}-[0-9]{8}_[0-9]{6}-${key}" <<<"${released}"; then
+              skip=true
+            fi
           fi
           {
             echo "ref=${ref}"
             echo "sha=${sha}"
             echo "stamp=${MH_STAMP}"
+            echo "build_epoch=${MH_BUILD_EPOCH}"
             echo "tag=${tag}"
             echo "skip=${skip}"
             echo "publish=${publish}"
@@ -133,6 +146,8 @@ jobs:
     name: build (${{ matrix.name }})
     runs-on: ${{ matrix.runner }}
     container: ${{ matrix.image }}
+    env:
+      MH_BUILD_EPOCH: ${{ needs.resolve.outputs.build_epoch }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.resolve.outputs.matrix) }}
@@ -229,7 +244,7 @@ jobs:
           printf '%s\n' "${files[@]}"
           gh release create "${TAG}" --repo "${REPO}" --target "${GITHUB_SHA}" \
             --title "retrobox-mangohud ${REF} (${STAMP})" \
-            --notes "MangoHud ${REF} (\`${SHA}\`) with the patches in \`patches/\` applied. Built for ${DISTROS}, each for amd64 (x86_64) and arm64 (aarch64). Pick the file for your distribution and CPU: each family uses its own naming (name_version_arch.deb, name-version-release.dist.arch.rpm), and the version carries the upstream commit date and time." \
+            --notes "MangoHud ${REF} (\`${SHA}\`) with the patches in \`patches/\` applied. Built for ${DISTROS}, each for amd64 (x86_64) and arm64 (aarch64). Pick the file for your distribution and CPU: each family uses its own naming (name_version_arch.deb, name-version-release.dist.arch.rpm), and the version carries the UTC date and time of the build." \
             "${files[@]}"
 
   # When the scheduled run fails (typically a patch that no longer applies to

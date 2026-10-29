@@ -76,28 +76,45 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null 2>&1 && pwd -P)"
 # onto a newer upstream, see fetch.sh.
 PATCH_BASE="$(tr -d '[:space:]' < "${REPO_ROOT}/patches/BASE")"
 
-# mh_snapshot SRC: describes the upstream ref of a checkout made by fetch.sh.
-# Everything comes from the COMMIT the ref points to (UTC), not from the build
-# date, so rebuilding the same ref gives the same version. Sets:
+# mh_snapshot SRC: describes the upstream ref of a checkout made by fetch.sh
+# and the build being made from it. The date in the version is the date of the
+# BUILD (UTC), not the date of the upstream commit: a package built today from
+# v0.8.4 says today. It is taken from MH_BUILD_EPOCH (seconds since the epoch)
+# when set, so every job of one CI run shares it; otherwise it is fixed the
+# first time mh_snapshot runs on SRC and kept in SRC/.git/retrobox-build-epoch,
+# so stage.sh and build-deb.sh/build-rpm.sh agree on it. Sets:
 #   MH_REF                 the ref that was asked for (v0.8.4, master, ...)
-#   MH_DATE / MH_TIME      YYYYMMDD / HHMMSS
-#   MH_STAMP               YYYYMMDD_HHMMSS
+#   MH_DATE / MH_TIME      YYYYMMDD / HHMMSS of the build
+#   MH_STAMP               YYYYMMDD_HHMMSS of the build
+#   MH_COMMIT_STAMP        YYYYMMDD_HHMMSS of the upstream commit (BUILDINFO)
 #   MH_SHA / MH_SHA_FULL   7-char / full commit id
 #   MH_DEB_VERSION         0.8.4              (a release tag: the tag's version)
-#                          20260527.142530    (anything else: date.time of the commit)
+#                          20261029.193000    (anything else: build date.time)
 #   MH_RPM_VERSION         same as MH_DEB_VERSION
-#   MH_REV_DATE            .20260527.140811   (a release tag: commit date and time,
+#   MH_REV_DATE            .20261029.193000   (a release tag: build date and time,
 #                          appended to the package revision)
 #                          empty              (anything else: the version has it)
+#   SOURCE_DATE_EPOCH      the build time, so file dates match the version
 # A Debian version cannot contain "_", so the stamp is written with a dot. The
-# commit id and the date of a release tag are in BUILDINFO and in the release.
+# commit id and its date are in BUILDINFO and in the release notes.
 mh_snapshot() {
-    local src="$1" ct
+    local src="$1" ct bt epoch_file
     MH_REF="$(cat "${src}/.git/retrobox-ref")"
     ct="$(git -C "${src}" log -1 --format=%ct)"
-    MH_DATE="$(date -u -d "@${ct}" +%Y%m%d)"
-    MH_TIME="$(date -u -d "@${ct}" +%H%M%S)"
+    epoch_file="${src}/.git/retrobox-build-epoch"
+    if [[ -n "${MH_BUILD_EPOCH:-}" ]]; then
+        bt="${MH_BUILD_EPOCH}"
+    elif [[ -s "${epoch_file}" ]]; then
+        bt="$(cat "${epoch_file}")"
+    else
+        bt="$(date -u +%s)"
+        printf '%s\n' "${bt}" > "${epoch_file}"
+    fi
+    [[ "${bt}" =~ ^[0-9]+$ ]] || { echo "mh_snapshot: bad build epoch '${bt}'" >&2; return 1; }
+    MH_DATE="$(date -u -d "@${bt}" +%Y%m%d)"
+    MH_TIME="$(date -u -d "@${bt}" +%H%M%S)"
     MH_STAMP="${MH_DATE}_${MH_TIME}"
+    MH_COMMIT_STAMP="$(date -u -d "@${ct}" +%Y%m%d_%H%M%S)"
     MH_SHA="$(git -C "${src}" rev-parse --short=7 HEAD)"
     MH_SHA_FULL="$(git -C "${src}" rev-parse HEAD)"
     if [[ "${MH_REF}" =~ ^v([0-9]+(\.[0-9]+)*)$ ]]; then
@@ -108,8 +125,9 @@ mh_snapshot() {
         MH_REV_DATE=""
     fi
     MH_RPM_VERSION="${MH_DEB_VERSION}"
-    SOURCE_DATE_EPOCH="${ct}"
-    export MH_REF MH_DATE MH_TIME MH_STAMP MH_SHA MH_SHA_FULL MH_DEB_VERSION MH_RPM_VERSION MH_REV_DATE SOURCE_DATE_EPOCH
+    SOURCE_DATE_EPOCH="${bt}"
+    export MH_REF MH_DATE MH_TIME MH_STAMP MH_COMMIT_STAMP MH_SHA MH_SHA_FULL \
+        MH_DEB_VERSION MH_RPM_VERSION MH_REV_DATE SOURCE_DATE_EPOCH
 }
 
 # distro_tag: short name of the distribution this runs on (deb13, ubuntu24.04).

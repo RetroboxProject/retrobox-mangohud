@@ -170,7 +170,8 @@ cat > "${DOC}/BUILDINFO" <<EOF2
 upstream: ${UPSTREAM_URL}
 ref:      ${MH_REF}
 commit:   ${MH_SHA_FULL}
-date:     ${MH_STAMP} (UTC, commit date)
+built:    ${MH_STAMP} (UTC)
+committed: ${MH_COMMIT_STAMP} (UTC)
 patches:  $(find "${REPO_ROOT}/patches" -name '*.patch' | wc -l) (made against $(cat "${REPO_ROOT}/patches/BASE"))
 EOF2
 chmod 644 "${DOC}/BUILDINFO"

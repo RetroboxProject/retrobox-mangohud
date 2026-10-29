@@ -6,7 +6,7 @@
 # Environment: PKG_REVISION  package revision, bumped per build (default 1)
 #
 # Version: <tag version>-<revision>.<YYYYMMDD>.<HHMMSS>~<distro tag>, with the UTC
-# date and time of the upstream commit, e.g. 0.8.4-12.20260527.140811~ubuntu24.04.
+# date and time of the build (not of the upstream commit), e.g. 0.8.4-12.20260527.140811~ubuntu24.04.
 # A build of something that is not a release tag is
 # <YYYYMMDD>.<HHMMSS>-<revision>~<distro tag> (see mh_snapshot in common.sh).
 #

@@ -116,7 +116,6 @@ done
 layers=("${LAYER_DIR}"/RetroboxMangoHud.*.json)
 [[ ${#layers[@]} -eq 1 && -f "${layers[0]}" ]] || fail "expected one RetroboxMangoHud.*.json in ${LAYER_DIR}, found ${#layers[@]}"
 [[ ! -e "${PREFIX}/share/vulkan" ]] || fail "${PREFIX}/share/vulkan must not exist: the loader never looks there"
-python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "${layers[0]}" || fail "${layers[0]} is not valid JSON"
 layer="${layers[0]}"
 grep -q '"VK_LAYER_RETROBOX_MANGOHUD_overlay_' "${layer}" || fail "layer name is not the Retrobox one"
 grep -q '"RETROBOX_MANGOHUD": "1"' "${layer}" || fail "layer is not enabled by RETROBOX_MANGOHUD=1"

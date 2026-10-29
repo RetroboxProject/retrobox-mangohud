@@ -6,8 +6,11 @@
 # Layout (relative to DESTDIR):
 #   /opt/retrobox/libexec/mangohud/bin/mangohud                  wrapper
 #   /opt/retrobox/libexec/mangohud/lib/mangohud/lib64/*.so       libraries
-#   /opt/retrobox/libexec/mangohud/share/vulkan/implicit_layer.d/
-#                                       RetroboxMangoHud.<arch>.json
+#   /usr/share/vulkan/implicit_layer.d/RetroboxMangoHud.<arch>.json
+#                                       the Vulkan layer manifest, where the
+#                                       Vulkan loader looks for implicit layers
+#                                       (its library_path points into the
+#                                       private prefix)
 #   /usr/lib/environment.d/64-retrobox-mangohud.conf
 #   /usr/share/doc/retrobox-mangohud/{copyright,licenses/,patches/,BUILDINFO}
 #
@@ -41,7 +44,11 @@ DESTDIR="$(cd "${DESTDIR}" >/dev/null 2>&1 && pwd -P)"
 
 DESTDIR="${DESTDIR}" meson install -C "${SRC}/build-${MICROARCH}" --no-rebuild >/dev/null
 ROOT="${DESTDIR}${PREFIX}"
+# Where meson put upstream's manifest, and where Retrobox's goes. The latter
+# must be a directory the Vulkan loader searches on its own (/usr/share/vulkan/
+# implicit_layer.d): a manifest inside the private prefix is never seen by it.
 LAYER_DIR="${ROOT}/share/vulkan/implicit_layer.d"
+VK_LAYER_DIR="${DESTDIR}/usr/share/vulkan/implicit_layer.d"
 
 # --- sanity: the wrapper must not rely on ld.so's $LIB ------------------------
 [[ -x "${ROOT}/bin/mangohud" ]] || fail "no bin/mangohud was installed"
@@ -55,29 +62,40 @@ fi
 shopt -s nullglob
 upstream_layers=("${LAYER_DIR}"/MangoHud.*.json)
 [[ ${#upstream_layers[@]} -gt 0 ]] || fail "upstream generated no Vulkan layer JSON"
+mkdir -p "${VK_LAYER_DIR}"
 for up in "${upstream_layers[@]}"; do
     arch="$(basename "${up}" .json)"
     arch="${arch#MangoHud.}"
-    python3 - "${up}" "${LAYER_DIR}/RetroboxMangoHud.${arch}.json" "${arch}" <<'PYEOF'
+    python3 - "${up}" "${VK_LAYER_DIR}/RetroboxMangoHud.${arch}.json" "${arch}" \
+        "${DESTDIR}" "${PREFIX}/${LIBDIR_REL}/libMangoHud.so" <<'PYEOF'
 import json
+import os
 import sys
 
-src, dst, arch = sys.argv[1:4]
+src, dst, arch, destdir, expected_lib = sys.argv[1:6]
 with open(src, encoding="utf-8") as handle:
     data = json.load(handle)
 layer = data["layer"]
 layer["name"] = f"VK_LAYER_RETROBOX_MANGOHUD_overlay_{arch}"
 layer["enable_environment"] = {"RETROBOX_MANGOHUD": "1"}
 layer["disable_environment"] = {"RETROBOX_MANGOHUD_DISABLE": "1"}
+# The loader dlopen()s library_path: it must be the absolute path of the
+# private library, which has to exist in the staged tree.
+if layer["library_path"] != expected_lib:
+    sys.exit(f"stage.sh: library_path is {layer['library_path']!r}, expected {expected_lib!r}")
+if not os.path.isfile(destdir + expected_lib):
+    sys.exit(f"stage.sh: {expected_lib} is not in the staged tree")
 with open(dst, "w", encoding="utf-8") as handle:
     json.dump(data, handle, indent=4)
     handle.write("\n")
 PYEOF
-    rm -f "${up}"
 done
-rm -f "${LAYER_DIR}"/MangoHud*.json
+# Nothing Vulkan is left in the private prefix: upstream's manifest is dropped.
+rm -rf "${ROOT}/share/vulkan"
 
 # --- keep the Retrobox layer off outside Retrobox -----------------------------
+# The manifest is now visible to every Vulkan program, but it only switches on
+# with RETROBOX_MANGOHUD=1 and never while RETROBOX_MANGOHUD_DISABLE exists.
 # retrobox-core removes RETROBOX_MANGOHUD_DISABLE for the games it launches.
 mkdir -p "${DESTDIR}/usr/lib/environment.d"
 cat > "${DESTDIR}/usr/lib/environment.d/64-retrobox-mangohud.conf" <<'EOF2'

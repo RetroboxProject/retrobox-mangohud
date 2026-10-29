@@ -84,7 +84,9 @@ esac
 
 PREFIX=/opt/retrobox/libexec/mangohud
 LIBDIR="${PREFIX}/lib/mangohud/lib64"
-LAYER_DIR="${PREFIX}/share/vulkan/implicit_layer.d"
+# The loader only looks in its own directories, so the manifest is installed
+# there; the library it points to stays in the private prefix.
+LAYER_DIR=/usr/share/vulkan/implicit_layer.d
 
 [[ -x "${PREFIX}/bin/mangohud" ]]   || fail "${PREFIX}/bin/mangohud missing or not executable"
 [[ -f "${LIBDIR}/libMangoHud.so" ]] || fail "libMangoHud.so missing from ${LIBDIR}"
@@ -109,9 +111,12 @@ for f in copyright BUILDINFO licenses/MIT.txt licenses/mangohud.LICENSE licenses
     grep -qxF "${DOC}/${f}" <<<"${FILES}" || fail "${DOC}/${f} is not in the package"
 done
 
-# Exactly one Vulkan layer: Retrobox's, enabled by RETROBOX_MANGOHUD.
-layers=("${LAYER_DIR}"/*.json)
-[[ ${#layers[@]} -eq 1 ]] || fail "expected one layer JSON in ${LAYER_DIR}, found ${#layers[@]}"
+# Exactly one Retrobox Vulkan layer, enabled by RETROBOX_MANGOHUD, in the
+# loader's directory and nothing Vulkan left in the private prefix.
+layers=("${LAYER_DIR}"/RetroboxMangoHud.*.json)
+[[ ${#layers[@]} -eq 1 && -f "${layers[0]}" ]] || fail "expected one RetroboxMangoHud.*.json in ${LAYER_DIR}, found ${#layers[@]}"
+[[ ! -e "${PREFIX}/share/vulkan" ]] || fail "${PREFIX}/share/vulkan must not exist: the loader never looks there"
+python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "${layers[0]}" || fail "${layers[0]} is not valid JSON"
 layer="${layers[0]}"
 grep -q '"VK_LAYER_RETROBOX_MANGOHUD_overlay_' "${layer}" || fail "layer name is not the Retrobox one"
 grep -q '"RETROBOX_MANGOHUD": "1"' "${layer}" || fail "layer is not enabled by RETROBOX_MANGOHUD=1"
@@ -119,9 +124,9 @@ grep -q '"RETROBOX_MANGOHUD_DISABLE": "1"' "${layer}" || fail "layer has no RETR
 lib_in_json="$(sed -n 's/.*"library_path": *"\([^"]*\)".*/\1/p' "${layer}")"
 [[ -f "${lib_in_json}" ]] || fail "library_path ${lib_in_json} does not exist"
 
-# Private: nothing outside the prefix except the environment.d file and docs,
-# and no ldconfig registration.
-stray="$(grep -vE "^(${PREFIX}(/|$)|/usr/lib/environment\.d(/64-retrobox-mangohud\.conf)?$|/usr/share/doc(/retrobox-mangohud(/.*)?)?$|/opt(/retrobox(/libexec)?)?$|/usr(/lib|/share)?$|/\.?$)" <<<"${FILES}" || true)"
+# Private: nothing outside the prefix except the layer manifest, the environment.d
+# file and docs, and no ldconfig registration.
+stray="$(grep -vE "^(${PREFIX}(/|$)|/usr/share/vulkan(/implicit_layer\.d(/RetroboxMangoHud\.[^/]+\.json)?)?$|/usr/lib/environment\.d(/64-retrobox-mangohud\.conf)?$|/usr/share/doc(/retrobox-mangohud(/.*)?)?$|/opt(/retrobox(/libexec)?)?$|/usr(/lib|/share)?$|/\.?$)" <<<"${FILES}" || true)"
 [[ -z "${stray}" ]] || fail "files outside the private prefix:
 ${stray}"
 [[ ! -e /etc/ld.so.conf.d/mangohud.conf ]] || fail "the private libdir must not be registered with ldconfig"

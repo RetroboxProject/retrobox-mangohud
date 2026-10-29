@@ -64,13 +64,15 @@ and time, written `YYYYMMDD_HHMMSS`). The full commit id is in
 ## What gets installed
 
 Everything lives in a **private prefix**, so it can sit next to the MangoHud
-of the distribution without either shadowing the other:
+of the distribution without either shadowing the other. The only files outside
+it are the Vulkan layer manifest (the loader never looks inside the prefix) and
+the `environment.d` file:
 
 | Path | Content |
 |------|---------|
 | `/opt/retrobox/libexec/mangohud/bin/mangohud` | wrapper (absolute libdir baked in, no `$LIB`) |
 | `/opt/retrobox/libexec/mangohud/lib/mangohud/lib64/` | `libMangoHud.so` and friends |
-| `/opt/retrobox/libexec/mangohud/share/vulkan/implicit_layer.d/RetroboxMangoHud.<arch>.json` | Vulkan layer `VK_LAYER_RETROBOX_MANGOHUD_overlay_<arch>`, enabled by `RETROBOX_MANGOHUD=1`, disabled by `RETROBOX_MANGOHUD_DISABLE` |
+| `/usr/share/vulkan/implicit_layer.d/RetroboxMangoHud.<arch>.json` | Vulkan layer manifest, in the directory the Vulkan loader searches; layer `VK_LAYER_RETROBOX_MANGOHUD_overlay_<arch>`, enabled by `RETROBOX_MANGOHUD=1`, disabled by `RETROBOX_MANGOHUD_DISABLE`; its `library_path` points to the private library |
 | `/usr/lib/environment.d/64-retrobox-mangohud.conf` | keeps the Retrobox layer off outside Retrobox |
 
 Upstream's own `MangoHud.<arch>.json` layer is not installed. Nothing is

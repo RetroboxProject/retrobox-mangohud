@@ -43,6 +43,7 @@ cp -a %{stage}/. %{buildroot}/
 
 %files
 /opt/retrobox/libexec/mangohud
+/usr/share/vulkan/implicit_layer.d/RetroboxMangoHud.*.json
 /usr/lib/environment.d/64-retrobox-mangohud.conf
 %license /usr/share/doc/retrobox-mangohud/copyright
 %license /usr/share/doc/retrobox-mangohud/licenses

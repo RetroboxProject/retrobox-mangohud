@@ -96,9 +96,11 @@ jobs:
           mh_snapshot "${RUNNER_TEMP}/upstream"
           sha="${MH_SHA_FULL}"
           # Everything that influences the result besides upstream itself,
-          # including the set of distributions (a new release means a new build).
+          # including the set of distributions (a new release means a new build)
+          # and this workflow, which decides what a release contains.
           inputs_hash="$({ cat patches/BASE patches/*.patch scripts/*.sh scripts/*.py licenses/*.txt \
-            packaging/copyright packaging/*.txt packaging/deb/* packaging/rpm/*; \
+            packaging/copyright packaging/*.txt packaging/deb/* packaging/rpm/* \
+            .github/workflows/build.yml; \
             printf '%s' "${MATRIX}"; } | sha256sum | cut -c1-8)"
           # The tag carries the build date, which changes on every run, so what
           # tells whether this was already released is the suffix: the

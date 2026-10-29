@@ -242,6 +242,14 @@ jobs:
           set -euo pipefail
           mapfile -t files < <(find dist -type f \( -name '*.deb' -o -name '*.rpm' \) | sort)
           printf '%s\n' "${files[@]}"
+          # SHA256SUMS lists every package by bare file name; the installer at
+          # https://retroboxproject.github.io verifies downloads against it.
+          sums_dir="$(mktemp -d)"
+          for f in "${files[@]}"; do
+            (cd "$(dirname "${f}")" && sha256sum "$(basename "${f}")")
+          done > "${sums_dir}/SHA256SUMS"
+          cat "${sums_dir}/SHA256SUMS"
+          files+=("${sums_dir}/SHA256SUMS")
           gh release create "${TAG}" --repo "${REPO}" --target "${GITHUB_SHA}" \
             --title "retrobox-mangohud ${REF} (${STAMP})" \
             --notes "MangoHud ${REF} (\`${SHA}\`) with the patches in \`patches/\` applied. Built for ${DISTROS}, each for amd64 (x86_64) and arm64 (aarch64). Pick the file for your distribution and CPU: each family uses its own naming (name_version_arch.deb, name-version-release.dist.arch.rpm), and the version carries the UTC date and time of the build." \

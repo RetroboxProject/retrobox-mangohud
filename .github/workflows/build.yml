@@ -246,9 +246,11 @@ jobs:
           printf '%s\n' "${files[@]}"
           # SHA256SUMS lists every package by bare file name; the installer at
           # https://retroboxproject.github.io verifies downloads against it.
+          # GitHub stores "~" as "." in asset names (1.0~deb13 is published as
+          # 1.0.deb13), so list the name people will actually download.
           sums_dir="$(mktemp -d)"
           for f in "${files[@]}"; do
-            (cd "$(dirname "${f}")" && sha256sum "$(basename "${f}")")
+            (cd "$(dirname "${f}")" && sha256sum "$(basename "${f}")" | sed 's/~/./g')
           done > "${sums_dir}/SHA256SUMS"
           cat "${sums_dir}/SHA256SUMS"
           files+=("${sums_dir}/SHA256SUMS")
